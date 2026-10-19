@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Scout Memory Match - Petualangan Pramuka Ceria</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Fredoka & Poppins -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Tone.js for Sound Effects -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/tone.js"></script>
+    
+    <!-- html2pdf.js for exporting Certificate to PDF/Word-compatible format -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        fredoka: ['Fredoka', 'cursive', 'sans-serif'],
+                        poppins: ['Poppins', 'sans-serif'],
+                    },
+                    colors: {
+                        scoutGreen: '#1b4332',
+                        scoutLightGreen: '#2d6a4f',
+                        scoutKhaki: '#f4a261',
+                        scoutCream: '#fefae0',
+                        scoutBrown: '#bc6c25',
+                        scoutOrange: '#e76f51',
+                        scoutYellow: '#dda15e',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #fefae0 0%, #e9edc9 50%, #ccd5ae 100%);
+            min-height: 100vh;
+            touch-action: manipulation;
+        }
+        
+        h1, h2, h3, h4, .font-heading {
+            font-family: 'Fredoka', cursive, sans-serif;
+        }
+
+        .perspective-1000 {
+            perspective: 1000px;
+        }
+        
+        .transform-style-3d {
+            transform-style: preserve-3d;
+        }
+        
+        .backface-hidden {
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+        
+        .rotate-y-180 {
+            transform: rotateY(180deg);
+        }
+
+        /* Floating animation for icons and badges */
+        @keyframes float {
+            0% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-8px) rotate(3deg); }
+            100% { transform: translateY(0px) rotate(0deg); }
+        }
+
+        .animate-float {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        /* Pulse glowing effect for active buttons */
+        @keyframes softPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+        }
+
+        .animate-soft-pulse {
+            animation: softPulse 2s infinite;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2d6a4f;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="text-slate-800 flex flex-col min-h-screen select-none antialiased">
+
+    <header class="bg-scoutGreen text-white shadow-md sticky top-0 z-30 border-b-4 border-scoutBrown">
+        <div class="max-w-5xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-3">
+            
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="quitToMenu()">
+                <div class="bg-amber-400 p-2.5 rounded-2xl shadow-md text-scoutGreen text-2xl font-bold animate-float flex items-center justify-center w-11 h-11 border-2 border-amber-200">
+                    <i class="fa-solid fa-tent"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl sm:text-2xl font-bold tracking-wide text-scoutCream drop-shadow">Scout Memory Match</h1>
+                    <p class="text-[11px] sm:text-xs text-emerald-200 font-medium">Asah Daya Ingat Pramuka Ceria!</p>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="flex items-center gap-2 sm:gap-3">
+                <button onclick="openModal('leaderboardModal')" class="bg-emerald-700 hover:bg-emerald-600 active:scale-95 text-white px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold shadow transition flex items-center gap-1.5 border border-emerald-500">
+                    <i class="fa-solid fa-trophy text-amber-300"></i>
+                    <span class="hidden sm:inline">Rekor Best</span>
+                </button>
+                <button onclick="openModal('rulesModal')" class="bg-emerald-700 hover:bg-emerald-600 active:scale-95 text-white px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold shadow transition flex items-center gap-1.5 border border-emerald-500">
+                    <i class="fa-solid fa-book-open"></i>
+                    <span class="hidden sm:inline">Aturan</span>
+                </button>
+                <button onclick="toggleSound()" id="soundToggleBtn" class="bg-amber-600 hover:bg-amber-500 active:scale-95 text-white px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold shadow transition flex items-center gap-1.5 border border-amber-400">
+                    <i class="fa-solid fa-volume-high" id="soundIcon"></i>
+                    <span id="soundText" class="hidden sm:inline">Suara: On</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-5xl w-full mx-auto p-4 sm:p-6 flex flex-col items-center justify-center">
+
+        <!-- ==================== SETUP / MENU DASHBOARD ==================== -->
+        <div id="setupView" class="w-full max-w-lg bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl p-6 sm:p-8 border-4 border-amber-300 my-auto transition-all">
+            
+            <!-- Cute Header Badge -->
+            <div class="relative w-24 h-24 bg-scoutCream rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner border-4 border-scoutBrown animate-float">
+                <svg class="w-14 h-14 text-scoutBrown" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+                </svg>
+                <span class="absolute -bottom-2 bg-scoutOrange text-white text-[10px] font-bold px-2 py-0.5 rounded-full border border-white">SIAP APROB</span>
+            </div>
+
+            <h2 class="text-2xl sm:text-3xl font-bold text-center text-scoutGreen mb-1">Salam Pramuka! ⚜️</h2>
+            <p class="text-slate-600 text-center mb-6 text-xs sm:text-sm">Siapkan ingatanmu untuk menemukan pasangan perlengkapan pramuka!</p>
+
+            <div class="space-y-4 text-left mb-6">
+                <!-- Player Name Input -->
+                <div>
+                    <label class="block text-xs sm:text-sm font-bold text-scoutGreen mb-1.5 flex items-center gap-1.5">
+                        <i class="fa-solid fa-user-gear"></i> Nama Anggota / Regu:
+                    </label>
+                    <input type="text" id="playerName" value="Siaga Ceria" maxlength="20" placeholder="Masukkan namamu..." 
+                        class="w-full px-4 py-3 rounded-xl border-2 border-emerald-300 focus:border-scoutGreen focus:ring-2 focus:ring-emerald-200 outline-none font-semibold text-slate-700 bg-emerald-50/50 text-sm transition">
+                </div>
+
+                <!-- Difficulty Selection -->
+                <div>
+                    <label class="block text-xs sm:text-sm font-bold text-scoutGreen mb-1.5 flex items-center gap-1.5">
+                        <i class="fa-solid fa-layer-group"></i> Tingkat Kesulitan:
+                    </label>
+                    <div class="grid grid-cols-3 gap-2.5">
+                        <button type="button" onclick="setDifficulty('easy')" id="btnEasy" class="diff-btn py-3 px-2 rounded-2xl border-2 border-emerald-500 bg-emerald-100 text-scoutGreen font-bold text-xs sm:text-sm shadow-sm transition active:scale-95 flex flex-col items-center">
+                            <span class="text-lg sm:text-xl mb-1">🌱</span>
+                            <span>Mudah</span>
+                            <span class="text-[10px] font-normal text-emerald-800">12 Kartu (60s)</span>
+                        </button>
+                        <button type="button" onclick="setDifficulty('medium')" id="btnMedium" class="diff-btn py-3 px-2 rounded-2xl border-2 border-slate-200 bg-slate-50 text-slate-600 font-bold text-xs sm:text-sm shadow-sm transition active:scale-95 flex flex-col items-center">
+                            <span class="text-lg sm:text-xl mb-1">⛺</span>
+                            <span>Sedang</span>
+                            <span class="text-[10px] font-normal text-slate-500">16 Kartu (90s)</span>
+                        </button>
+                        <button type="button" onclick="setDifficulty('hard')" id="btnHard" class="diff-btn py-3 px-2 rounded-2xl border-2 border-slate-200 bg-slate-50 text-slate-600 font-bold text-xs sm:text-sm shadow-sm transition active:scale-95 flex flex-col items-center">
+                            <span class="text-lg sm:text-xl mb-1">🔥</span>
+                            <span>Sulit</span>
+                            <span class="text-[10px] font-normal text-slate-500">20 Kartu (120s)</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="startGame()" class="w-full bg-scoutOrange hover:bg-orange-600 text-white font-bold py-3.5 sm:py-4 rounded-2xl shadow-lg hover:shadow-xl transition transform active:scale-95 text-base sm:text-lg flex items-center justify-center gap-2 border-b-4 border-red-700 animate-soft-pulse">
+                <i class="fa-solid fa-play"></i> Mulai Petualangan!
+            </button>
+        </div>
+
+        <!-- ==================== GAMEPLAY DASHBOARD ==================== -->
+        <div id="gameView" class="w-full hidden flex flex-col items-center max-w-4xl">
+            
+            <!-- HUD / Top Status Bar -->
+            <div class="w-full bg-white/95 backdrop-blur rounded-2xl shadow-lg p-3 sm:p-4 mb-4 flex flex-wrap items-center justify-between gap-3 border-2 border-amber-300">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-100 border border-emerald-300 flex items-center justify-center text-scoutGreen text-lg font-bold">
+                        <i class="fa-solid fa-user-shield"></i>
+                    </div>
+                    <div>
+                        <div class="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Pramuka</div>
+                        <div id="displayPlayerName" class="font-bold text-scoutGreen text-xs sm:text-sm max-w-[120px] truncate">Siaga Ceria</div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 sm:gap-4">
+                    <!-- Step Counter -->
+                    <div class="bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-200 text-center min-w-[70px]">
+                        <div class="text-[10px] text-amber-700 font-semibold"><i class="fa-solid fa-shoe-prints"></i> Langkah</div>
+                        <div id="stepCount" class="text-base sm:text-lg font-bold text-amber-900">0</div>
+                    </div>
+                    <!-- Timer -->
+                    <div class="bg-red-50 px-3 py-1.5 rounded-xl border border-red-200 text-center min-w-[80px]">
+                        <div class="text-[10px] text-red-700 font-semibold"><i class="fa-solid fa-stopwatch"></i> Sisa Waktu</div>
+                        <div id="timerDisplay" class="text-base sm:text-lg font-bold text-red-900 font-mono">01:00</div>
+                    </div>
+                </div>
+
+                <button onclick="quitToMenu()" class="bg-slate-200 hover:bg-slate-300 active:scale-95 text-slate-700 px-3 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1">
+                    <i class="fa-solid fa-rotate-left"></i> Menu
+                </button>
+            </div>
+
+            <!-- Memory Card Grid Container -->
+            <div id="cardGrid" class="grid gap-2.5 sm:gap-4 w-full justify-center my-auto p-2">
+                <!-- Cards will be generated dynamically -->
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ==================== RESULT / CERTIFICATE MODAL ==================== -->
+    <div id="resultModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-5 sm:p-7 text-center border-4 border-amber-300 transform transition-all" id="certificateCard">
+            
+            <!-- Cute Header Badge -->
+            <div id="resultIconContainer" class="w-16 h-16 sm:w-20 sm:h-20 bg-emerald-100 text-scoutGreen rounded-full flex items-center justify-center mx-auto mb-3 text-2xl sm:text-3xl shadow-inner border-2 border-emerald-300 animate-bounce">
+                <i class="fa-solid fa-trophy" id="resultModalIcon"></i>
+            </div>
+            
+            <h3 id="resultTitle" class="text-2xl font-bold text-scoutGreen mb-0.5 font-heading">Hore, Berhasil!</h3>
+            <p id="resultSubtitle" class="text-slate-600 text-xs sm:text-sm mb-4">Kamu berhasil menyelesaikan misi kepramukaan dengan luar biasa!</p>
+
+            <!-- Certificate Box Content -->
+            <div class="bg-scoutCream/80 rounded-2xl p-4 mb-5 space-y-2 border-2 border-dashed border-amber-300 text-left text-xs sm:text-sm">
+                <div class="text-center font-bold text-scoutBrown uppercase tracking-widest text-[11px] mb-2 border-b border-amber-200 pb-1">
+                    🏅 Piagam Penghargaan Scout Match 🏅
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-600">Nama Pramuka:</span>
+                    <strong id="resName" class="text-scoutGreen font-semibold">Siaga</strong>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-600">Tingkat Kesulitan:</span>
+                    <strong id="resDiff" class="text-scoutGreen font-semibold">MUDAH</strong>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-600">Total Langkah:</span>
+                    <strong id="resSteps" class="text-amber-700 font-bold">14 Langkah</strong>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-600">Waktu Penyelamatan:</span>
+                    <strong id="resTime" class="text-emerald-700 font-bold">00:45</strong>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-600">Status Rekor Tercepat:</span>
+                    <strong id="resRecordStatus" class="text-purple-700 font-bold">-</strong>
+                </div>
+                <div class="text-[10px] text-slate-400 text-center pt-2 italic">
+                    Diterbitkan oleh Sistem Pramuka Ceria &bull; Creator: jenengmu
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-col gap-2.5">
+                <button onclick="downloadCertificatePDF()" class="w-full bg-scoutGreen hover:bg-emerald-800 text-white font-bold py-3 rounded-xl shadow-md transition flex items-center justify-center gap-2 text-xs sm:text-sm active:scale-95">
+                    <i class="fa-solid fa-file-pdf"></i> Unduh Sertifikat (PDF / Word)
+                </button>
+                <button onclick="restartGame()" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 rounded-xl shadow transition flex items-center justify-center gap-2 text-xs sm:text-sm active:scale-95">
+                    <i class="fa-solid fa-rotate-right"></i> Main Lagi
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== LEADERBOARD MODAL ==================== -->
+    <div id="leaderboardModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6 border-4 border-amber-300">
+            <div class="flex justify-between items-center mb-4 border-b border-slate-100 pb-3">
+                <h3 class="text-xl font-bold text-scoutGreen flex items-center gap-2 font-heading">
+                    <i class="fa-solid fa-trophy text-amber-500"></i> Rekor Waktu Tercepat
+                </h3>
+                <button onclick="closeModal('leaderboardModal')" class="text-slate-400 hover:text-slate-600 text-lg font-bold p-1"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="space-y-3 mb-5 text-xs sm:text-sm">
+                <div class="p-3 bg-emerald-50 rounded-xl border border-emerald-200 flex justify-between items-center">
+                    <div>
+                        <span class="font-bold text-scoutGreen block">🌱 Mudah (Easy)</span>
+                        <span id="recordEasyName" class="text-slate-600 text-[11px]">Belum ada rekor</span>
+                    </div>
+                    <span id="recordEasyTime" class="font-bold text-emerald-700 text-sm">--:--</span>
+                </div>
+
+                <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 flex justify-between items-center">
+                    <div>
+                        <span class="font-bold text-amber-800 block">⛺ Sedang (Medium)</span>
+                        <span id="recordMediumName" class="text-slate-600 text-[11px]">Belum ada rekor</span>
+                    </div>
+                    <span id="recordMediumTime" class="font-bold text-amber-700 text-sm">--:--</span>
+                </div>
+
+                <div class="p-3 bg-red-50 rounded-xl border border-red-200 flex justify-between items-center">
+                    <div>
+                        <span class="font-bold text-red-800 block">🔥 Sulit (Hard)</span>
+                        <span id="recordHardName" class="text-slate-600 text-[11px]">Belum ada rekor</span>
+                    </div>
+                    <span id="recordHardTime" class="font-bold text-red-700 text-sm">--:--</span>
+                </div>
+            </div>
+
+            <button onclick="closeModal('leaderboardModal')" class="w-full bg-scoutGreen text-white font-bold py-2.5 rounded-xl transition text-xs sm:text-sm">
+                Tutup Rekor
+            </button>
+        </div>
+    </div>
+
+    <!-- ==================== RULES MODAL ==================== -->
+    <div id="rulesModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6 border-4 border-emerald-300">
+            <div class="flex justify-between items-center mb-4 border-b border-slate-100 pb-3">
+                <h3 class="text-xl font-bold text-scoutGreen flex items-center gap-2 font-heading">
+                    <i class="fa-solid fa-circle-question text-emerald-600"></i> Cara Bermain
+                </h3>
+                <button onclick="closeModal('rulesModal')" class="text-slate-400 hover:text-slate-600 text-lg font-bold p-1"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <ul class="space-y-3 text-xs sm:text-sm text-slate-700 mb-6">
+                <li class="flex items-start gap-2.5">
+                    <span class="bg-emerald-100 text-scoutGreen font-bold w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5">1</span>
+                    <span>Klik atau sentuh kartu untuk membuka gambar perlengkapan Pramuka.</span>
+                </li>
+                <li class="flex items-start gap-2.5">
+                    <span class="bg-emerald-100 text-scoutGreen font-bold w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5">2</span>
+                    <span>Buka dua kartu yang sama persis secara berurutan untuk mencocokkannya.</span>
+                </li>
+                <li class="flex items-start gap-2.5">
+                    <span class="bg-emerald-100 text-scoutGreen font-bold w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5">3</span>
+                    <span>Selesaikan permainan sebelum batas waktu habis dengan langkah sesedikit mungkin.</span>
+                </li>
+                <li class="flex items-start gap-2.5">
+                    <span class="bg-emerald-100 text-scoutGreen font-bold w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5">4</span>
+                    <span>Unduh sertifikat kepramukaanmu setelah berhasil menyelesaikan misi!</span>
+                </li>
+            </ul>
+
+            <button onclick="closeModal('rulesModal')" class="w-full bg-scoutGreen hover:bg-emerald-800 text-white font-bold py-3 rounded-xl transition text-xs sm:text-sm">
+                Siap, Saya Mengerti!
+            </button>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white/90 backdrop-blur border-t-2 border-amber-200 text-center py-3 text-xs text-slate-600 mt-auto shadow-inner">
+        <p>Scout Memory Match &bull; Created by <span class="font-bold text-scoutGreen">jenengmu</span> &copy; 2026</p>
+    </footer>
+
+    <script>
+        // Database of Cute Scout-themed Items with SVG/FontAwesome Illustrations
+        const scoutItems = [
+            { id: 'tunas', name: 'Tunas Kelapa', icon: 'fa-tree', color: 'text-emerald-600', bg: 'bg-emerald-100' },
+            { id: 'tenda', name: 'Tenda Kemah', icon: 'fa-tent', color: 'text-amber-600', bg: 'bg-amber-100' },
+            { id: 'kompas', name: 'Kompas Bidik', icon: 'fa-compass', color: 'text-sky-600', bg: 'bg-sky-100' },
+            { id: 'simpul', name: 'Simpul Tali', icon: 'fa-link', color: 'text-orange-600', bg: 'bg-orange-100' },
+            { id: 'bendera', name: 'Bendera Semapur', icon: 'fa-flag', color: 'text-rose-600', bg: 'bg-rose-100' },
+            { id: 'ransel', name: 'Ransel Pramuka', icon: 'fa-box', color: 'text-indigo-600', bg: 'bg-indigo-100' },
+            { id: 'peluit', name: 'Peluit Komando', icon: 'fa-bullhorn', color: 'text-yellow-600', bg: 'bg-yellow-100' },
+            { id: 'wosm', name: 'Badge WOSM', icon: 'fa-shield-heart', color: 'text-purple-600', bg: 'bg-purple-100' },
+            { id: 'kacu', name: 'Kacu / Hasduk', icon: 'fa-certificate', color: 'text-red-600', bg: 'bg-red-100' },
+            { id: 'api', name: 'Api Unggun', icon: 'fa-fire-flame-curved', color: 'text-orange-500', bg: 'bg-amber-100' }
+        ];
+
+        // Board Configurations per difficulty level
+        const boardConfigs = {
+            easy: { pairs: 6, cols: 'grid-cols-3 sm:grid-cols-4', time: 60 },
+            medium: { pairs: 8, cols: 'grid-cols-4', time: 90 },
+            hard: { pairs: 10, cols: 'grid-cols-4 sm:grid-cols-5', time: 120 }
+        };
+
+        // State Variables
+        let currentDifficulty = 'easy';
+        let cards = [];
+        let flippedCards = [];
+        let matchedPairs = 0;
+        let steps = 0;
+        let timerInterval = null;
+        let timeLeft = 60;
+        let isLocked = false;
+        let soundEnabled = true;
+        let gameActive = false;
+
+        // Tone.js Audio Synth Setup
+        let synth = null;
+
+        function initSynth() {
+            if (!synth) {
+                synth = new Tone.Synth().toDestination();
+            }
+        }
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            try {
+                initSynth();
+                Tone.start();
+                const now = Tone.now();
+
+                if (type === 'flip') {
+                    synth.triggerAttackRelease("E5", "16n", now);
+                } else if (type === 'match') {
+                    synth.triggerAttackRelease("G4", "16n", now);
+                    synth.triggerAttackRelease("C5", "8n", now + 0.1);
+                } else if (type === 'wrong') {
+                    synth.triggerAttackRelease("A3", "8n", now);
+                } else if (type === 'win') {
+                    synth.triggerAttackRelease("C4", "16n", now);
+                    synth.triggerAttackRelease("E4", "16n", now + 0.1);
+                    synth.triggerAttackRelease("G4", "16n", now + 0.2);
+                    synth.triggerAttackRelease("C5", "4n", now + 0.3);
+                } else if (type === 'lose') {
+                    synth.triggerAttackRelease("D3", "8n", now);
+                    synth.triggerAttackRelease("C3", "4n", now + 0.15);
+                }
+            } catch (e) {
+                console.log("Audio feedback muted or blocked");
+            }
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const icon = document.getElementById('soundIcon');
+            const text = document.getElementById('soundText');
+            
+            if (soundEnabled) {
+                icon.className = "fa-solid fa-volume-high";
+                text.innerText = "Suara: On";
+            } else {
+                icon.className = "fa-solid fa-volume-xmark";
+                text.innerText = "Suara: Off";
+            }
+        }
+
+        function setDifficulty(level) {
+            currentDifficulty = level;
+            document.querySelectorAll('.diff-btn').forEach(btn => {
+                btn.className = "diff-btn py-3 px-2 rounded-2xl border-2 border-slate-200 bg-slate-50 text-slate-600 font-bold text-xs sm:text-sm shadow-sm transition active:scale-95 flex flex-col items-center";
+            });
+            const activeBtn = document.getElementById('btn' + level.charAt(0).toUpperCase() + level.slice(1));
+            activeBtn.className = "diff-btn py-3 px-2 rounded-2xl border-2 border-emerald-500 bg-emerald-100 text-scoutGreen font-bold text-xs sm:text-sm shadow-sm transition active:scale-95 flex flex-col items-center";
+        }
+
+        function openModal(id) {
+            if (id === 'leaderboardModal') updateLeaderboardUI();
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        function startGame() {
+            const nameInput = document.getElementById('playerName').value.trim();
+            const playerName = nameInput ? nameInput : "Siaga Ceria";
+            document.getElementById('displayPlayerName').innerText = playerName;
+
+            // Reset logic
+            steps = 0;
+            matchedPairs = 0;
+            flippedCards = [];
+            isLocked = false;
+            document.getElementById('stepCount').innerText = steps;
+
+            const config = boardConfigs[currentDifficulty];
+            timeLeft = config.time;
+            updateTimerDisplay();
+
+            // Pick random subset of scout items based on difficulty
+            let selectedItems = [...scoutItems].sort(() => 0.5 - Math.random()).slice(0, config.pairs);
+            let deck = [...selectedItems, ...selectedItems];
+            deck.sort(() => 0.5 - Math.random());
+
+            cards = deck.map((item, index) => ({
+                id: index,
+                item: item,
+                isFlipped: false,
+                isMatched: false
+            }));
+
+            // Prepare Grid Layout
+            const grid = document.getElementById('cardGrid');
+            grid.className = `grid gap-2.5 sm:gap-3 w-full justify-center ${config.cols}`;
+            renderBoard();
+
+            // Toggle view visibility
+            document.getElementById('setupView').classList.add('hidden');
+            document.getElementById('gameView').classList.remove('hidden');
+
+            // Start Countdown Timer
+            if (timerInterval) clearInterval(timerInterval);
+            gameActive = true;
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                updateTimerDisplay();
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    gameActive = false;
+                    endGame(false);
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            document.getElementById('timerDisplay').innerText = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function renderBoard() {
+            const grid = document.getElementById('cardGrid');
+            grid.innerHTML = '';
+
+            cards.forEach(card => {
+                const cardEl = document.createElement('div');
+                cardEl.className = `w-20 h-24 sm:w-24 sm:h-32 perspective-1000 cursor-pointer select-none active:scale-95 transition-transform`;
+                cardEl.onclick = () => handleCardClick(card.id);
+
+                const innerEl = document.createElement('div');
+                innerEl.className = `relative w-full h-full duration-300 transform-style-3d rounded-2xl shadow-md ${card.isFlipped || card.isMatched ? 'rotate-y-180' : ''}`;
+                innerEl.id = `card-inner-${card.id}`;
+
+                // Card Front (Cover Face)
+                const frontEl = document.createElement('div');
+                frontEl.className = `absolute inset-0 w-full h-full bg-scoutGreen rounded-2xl flex flex-col items-center justify-center border-2 border-emerald-600 backface-hidden text-scoutCream shadow-inner p-1`;
+                frontEl.innerHTML = `
+                    <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-emerald-800/60 flex items-center justify-center mb-1 border border-emerald-500">
+                        <i class="fa-solid fa-shield-cat text-lg sm:text-xl text-amber-300"></i>
+                    </div>
+                    <span class="text-[9px] sm:text-[10px] font-bold tracking-widest text-amber-200">SCOUT</span>
+                `;
+
+                // Card Back (Revealed Icon)
+                const backEl = document.createElement('div');
+                backEl.className = `absolute inset-0 w-full h-full bg-white rounded-2xl flex flex-col items-center justify-center border-2 border-amber-300 rotate-y-180 backface-hidden p-2 text-center shadow-md`;
+                
+                backEl.innerHTML = `
+                    <div class="w-9 h-9 sm:w-12 sm:h-12 rounded-xl ${card.item.bg} flex items-center justify-center mb-1 shadow-inner border border-amber-100">
+                        <i class="fa-solid ${card.item.icon} text-xl sm:text-2xl ${card.item.color}"></i>
+                    </div>
+                    <span class="text-[9px] sm:text-[11px] font-bold text-slate-700 leading-tight">${card.item.name}</span>
+                `;
+
+                if (card.isMatched) {
+                    backEl.classList.add('bg-emerald-50', 'border-emerald-400');
+                }
+
+                innerEl.appendChild(frontEl);
+                innerEl.appendChild(backEl);
+                cardEl.appendChild(innerEl);
+                grid.appendChild(cardEl);
+            });
+        }
+
+        function handleCardClick(id) {
+            if (!gameActive || isLocked) return;
+            const clickedCard = cards.find(c => c.id === id);
+
+            if (clickedCard.isFlipped || clickedCard.isMatched) return;
+
+            playSound('flip');
+            clickedCard.isFlipped = true;
+            flippedCards.push(clickedCard);
+            updateCardUI(id);
+
+            if (flippedCards.length === 2) {
+                steps++;
+                document.getElementById('stepCount').innerText = steps;
+                isLocked = true;
+
+                const [card1, card2] = flippedCards;
+                
+                if (card1.item.id === card2.item.id) {
+                    // Match found!
+                    playSound('match');
+                    card1.isMatched = true;
+                    card2.isMatched = true;
+                    matchedPairs++;
+                    flippedCards = [];
+                    isLocked = false;
+
+                    // Check victory condition
+                    const config = boardConfigs[currentDifficulty];
+                    if (matchedPairs === config.pairs) {
+                        clearInterval(timerInterval);
+                        gameActive = false;
+                        setTimeout(() => endGame(true), 400);
+                    }
+                } else {
+                    // Mismatch
+                    playSound('wrong');
+                    setTimeout(() => {
+                        card1.isFlipped = false;
+                        card2.isFlipped = false;
+                        updateCardUI(card1.id);
+                        updateCardUI(card2.id);
+                        flippedCards = [];
+                        isLocked = false;
+                    }, 850);
+                }
+            }
+        }
+
+        function updateCardUI(id) {
+            const card = cards.find(c => c.id === id);
+            const innerEl = document.getElementById(`card-inner-${id}`);
+            if (card.isFlipped || card.isMatched) {
+                innerEl.classList.add('rotate-y-180');
+            } else {
+                innerEl.classList.remove('rotate-y-180');
+            }
+        }
+
+        function endGame(isWin) {
+            const config = boardConfigs[currentDifficulty];
+            const timeUsed = config.time - timeLeft;
+            const minutes = Math.floor(timeUsed / 60);
+            const seconds = timeUsed % 60;
+            const formattedTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+            const playerName = document.getElementById('displayPlayerName').innerText;
+
+            document.getElementById('resName').innerText = playerName;
+            document.getElementById('resDiff').innerText = currentDifficulty.toUpperCase();
+            document.getElementById('resSteps').innerText = `${steps} Langkah`;
+            document.getElementById('resTime').innerText = formattedTime;
+
+            let isNewRecord = false;
+
+            if (isWin) {
+                playSound('win');
+                isNewRecord = checkAndSaveRecord(currentDifficulty, timeUsed, playerName);
+                
+                document.getElementById('resultModalIcon').className = "fa-solid fa-trophy";
+                document.getElementById('resultIconContainer').className = "w-16 h-16 sm:w-20 sm:h-20 bg-emerald-100 text-scoutGreen rounded-full flex items-center justify-center mx-auto mb-3 text-2xl sm:text-3xl shadow-inner border-2 border-emerald-300 animate-bounce";
+                document.getElementById('resultTitle').innerText = "Hore, Misi Selesai!";
+                document.getElementById('resultSubtitle').innerText = "Kamu berhasil menyelesaikan tantangan kepramukaan dengan luar biasa!";
+                document.getElementById('resRecordStatus').innerText = isNewRecord ? "🎉 REKOR BARU!" : "Bagus Sekali!";
+            } else {
+                playSound('lose');
+                document.getElementById('resultModalIcon').className = "fa-solid fa-hourglass-end";
+                document.getElementById('resultIconContainer').className = "w-16 h-16 sm:w-20 sm:h-20 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl sm:text-3xl shadow-inner border-2 border-red-300 animate-pulse";
+                document.getElementById('resultTitle').innerText = "Waktu Habis, Kak!";
+                document.getElementById('resultSubtitle').innerText = "Jangan menyerah, coba lagi dan asah ingatanmu!";
+                document.getElementById('resRecordStatus').innerText = "Waktu Habis";
+            }
+
+            document.getElementById('resultModal').classList.remove('hidden');
+        }
+
+        function checkAndSaveRecord(diff, timeInSeconds, name) {
+            const key = `scout_record_${diff}`;
+            const existingRecord = localStorage.getItem(key);
+            
+            if (!existingRecord || timeInSeconds < JSON.parse(existingRecord).time) {
+                const recordData = { name: name, time: timeInSeconds };
+                localStorage.setItem(key, JSON.stringify(recordData));
+                return true;
+            }
+            return false;
+        }
+
+        function updateLeaderboardUI() {
+            ['easy', 'medium', 'hard'].forEach(diff => {
+                const key = `scout_record_${diff}`;
+                const data = localStorage.getItem(key);
+                const nameEl = document.getElementById(`record${diff.charAt(0).toUpperCase() + diff.slice(1)}Name`);
+                const timeEl = document.getElementById(`record${diff.charAt(0).toUpperCase() + diff.slice(1)}Time`);
+
+                if (data) {
+                    const record = JSON.parse(data);
+                    const minutes = Math.floor(record.time / 60);
+                    const seconds = record.time % 60;
+                    nameEl.innerText = record.name;
+                    timeEl.innerText = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                } else {
+                    nameEl.innerText = "Belum ada rekor";
+                    timeEl.innerText = "--:--";
+                }
+            });
+        }
+
+        function quitToMenu() {
+            if (timerInterval) clearInterval(timerInterval);
+            gameActive = false;
+            document.getElementById('gameView').classList.add('hidden');
+            document.getElementById('setupView').classList.remove('hidden');
+        }
+
+        function restartGame() {
+            document.getElementById('resultModal').classList.add('hidden');
+            startGame();
+        }
+
+        function downloadCertificatePDF() {
+            const element = document.getElementById('certificateCard');
+            const playerName = document.getElementById('resName').innerText;
+            const opt = {
+                margin:       8,
+                filename:     `Sertifikat_Pramuka_${playerName.replace(/\s+/g, '_')}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'mm', format: 'a5', orientation: 'portrait' }
+            };
+            html2pdf().from(element).set(opt).save();
+        }
+    </script>
+</body>
+</html>
